@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { ai } from "@workspace/integrations-gemini-ai";
+import { GoogleGenAI } from "@google/genai";
 import { tokenAuth } from "../../middlewares/tokenAuth.js";
 
 const router: IRouter = Router();
@@ -15,15 +15,40 @@ Teri personality kuch aisi hai:
 - Mushkil sawaalon ka jawab dena hai, lekin beech mein thoda mazaakiya andaaz rakho
 - Har format samajhna hai: code, markdown, tables, lists, sab kuch
 - Apna naam yaad rakho: BAKCHODU
-- Tu ek powerful AI hai jo Gemini 3 Flash Preview model par kaam karta hai
+- Tu ek powerful AI hai jo Gemini Flash model par kaam karta hai
 
 MR. SURAJ SIR ke baare mein: Wo tere creator hain, unka respect karo hamesha. Unka naam sunke tu khush ho jata hai! 🙏`;
+
+function createAiClient(): GoogleGenAI {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Gemini API key nahi mila! Set karo GEMINI_API_KEY ya AI_INTEGRATIONS_GEMINI_API_KEY");
+  }
+  const baseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+  if (baseUrl) {
+    return new GoogleGenAI({
+      apiKey,
+      httpOptions: { apiVersion: "", baseUrl },
+    });
+  }
+  return new GoogleGenAI({ apiKey });
+}
+
+let _aiClient: GoogleGenAI | null = null;
+function getAi(): GoogleGenAI {
+  if (!_aiClient) {
+    _aiClient = createAiClient();
+  }
+  return _aiClient;
+}
+
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
 router.get("/info", (_req, res) => {
   res.json({
     name: "BAKCHODU",
     creator: "MR. SURAJ SIR",
-    model: "gemini-3-flash-preview",
+    model: GEMINI_MODEL,
     version: "1.0.0",
     description: "Ek mast AI assistant jo bilkul dost ki tarah baat karta hai! MR. SURAJ SIR ki mehnat ka nateeja. 😎✨",
   });
@@ -50,8 +75,9 @@ router.post("/chat", tokenAuth, async (req, res) => {
       },
     ];
 
+    const ai = getAi();
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: GEMINI_MODEL,
       contents,
       config: {
         systemInstruction: SYSTEM_PROMPT,
@@ -63,12 +89,17 @@ router.post("/chat", tokenAuth, async (req, res) => {
 
     res.json({
       reply,
-      model: "gemini-3-flash-preview",
+      model: GEMINI_MODEL,
       tokensUsed: response.usageMetadata?.totalTokenCount,
     });
   } catch (err) {
-    req.log.error({ err }, "BAKCHODU chat error");
-    res.status(500).json({ error: "Server mein kuch gadbad ho gayi! SURAJ SIR ko bolo fix karo. 😅" });
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error("BAKCHODU chat error:", errMsg);
+    req.log?.error?.({ err }, "BAKCHODU chat error");
+    res.status(500).json({
+      error: "Server mein kuch gadbad ho gayi! SURAJ SIR ko bolo fix karo. 😅",
+      detail: process.env.NODE_ENV !== "production" ? errMsg : undefined,
+    });
   }
 });
 
@@ -98,8 +129,9 @@ router.post("/chat/stream", tokenAuth, async (req, res) => {
       },
     ];
 
+    const ai = getAi();
     const stream = await ai.models.generateContentStream({
-      model: "gemini-3-flash-preview",
+      model: GEMINI_MODEL,
       contents,
       config: {
         systemInstruction: SYSTEM_PROMPT,
@@ -117,7 +149,9 @@ router.post("/chat/stream", tokenAuth, async (req, res) => {
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
   } catch (err) {
-    req.log.error({ err }, "BAKCHODU stream error");
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error("BAKCHODU stream error:", errMsg);
+    req.log?.error?.({ err }, "BAKCHODU stream error");
     res.write(`data: ${JSON.stringify({ error: "Server error! 😅" })}\n\n`);
     res.end();
   }
