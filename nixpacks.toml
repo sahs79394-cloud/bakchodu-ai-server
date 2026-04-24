@@ -2,12 +2,10 @@
 nixPkgs = ["nodejs_22"]
 
 [phases.install]
-cmds = []
+cmds = ["corepack enable pnpm && pnpm install --no-frozen-lockfile"]
 
 [phases.build]
-cmds = [
-  "npm install -g pnpm && pnpm install --no-frozen-lockfile && pnpm --filter @workspace/api-server run build"
-]
+cmds = ["pnpm --filter @workspace/api-server run build"]
 
 [start]
 cmd = "node --enable-source-maps artifacts/api-server/dist/index.mjs"
