@@ -1,6 +1,9 @@
 [phases.setup]
 nixPkgs = ["nodejs_22"]
 
+[phases.install]
+cmds = []
+
 [phases.build]
 cmds = [
   "npm install -g pnpm && pnpm install --no-frozen-lockfile && pnpm --filter @workspace/api-server run build"
