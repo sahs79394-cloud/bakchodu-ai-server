@@ -319,6 +319,18 @@ components:
           type: string
       required:
         - error
+    BakchoduImageInput:
+      type: object
+      properties:
+        data:
+          type: string
+          description: Base64 encoded image data
+        mimeType:
+          type: string
+          description: MIME type of the image (e.g. image/jpeg, image/png, image/webp)
+          default: image/jpeg
+      required:
+        - data
     BakchoduChatRequest:
       type: object
       properties:
@@ -328,6 +340,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BakchoduMessage"
+        images:
+          type: array
+          description: Optional images to analyze (base64 encoded)
+          items:
+            $ref: "#/components/schemas/BakchoduImageInput"
         token:
           type: string
           description: GitHub or Railway token for authentication
@@ -342,6 +359,11 @@ components:
           enum: [user, assistant]
         content:
           type: string
+        images:
+          type: array
+          description: Images attached to this message
+          items:
+            $ref: "#/components/schemas/BakchoduImageInput"
       required:
         - role
         - content
@@ -370,6 +392,10 @@ components:
           type: string
         description:
           type: string
+        capabilities:
+          type: array
+          items:
+            type: string
       required:
         - name
         - creator

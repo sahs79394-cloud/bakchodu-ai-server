@@ -59,14 +59,25 @@ export const BakchoduMessageRole = {
   assistant: "assistant",
 } as const;
 
+export interface BakchoduImageInput {
+  /** Base64 encoded image data */
+  data: string;
+  /** MIME type of the image (e.g. image/jpeg, image/png, image/webp) */
+  mimeType?: string;
+}
+
 export interface BakchoduMessage {
   role: BakchoduMessageRole;
   content: string;
+  /** Images attached to this message */
+  images?: BakchoduImageInput[];
 }
 
 export interface BakchoduChatRequest {
   message: string;
   history?: BakchoduMessage[];
+  /** Optional images to analyze (base64 encoded) */
+  images?: BakchoduImageInput[];
   /** GitHub or Railway token for authentication */
   token: string;
 }
@@ -83,4 +94,5 @@ export interface BakchoduInfoResponse {
   model: string;
   version: string;
   description: string;
+  capabilities?: string[];
 }

@@ -104,6 +104,11 @@ export const GenerateGeminiImageResponse = zod.object({
   mimeType: zod.string(),
 });
 
+const BakchoduImageInputSchema = zod.object({
+  data: zod.string().describe("Base64 encoded image data"),
+  mimeType: zod.string().optional().default("image/jpeg"),
+});
+
 /**
  * @summary Chat with BAKCHODU AI (non-streaming)
  */
@@ -114,9 +119,11 @@ export const BakchoduChatBody = zod.object({
       zod.object({
         role: zod.enum(["user", "assistant"]),
         content: zod.string(),
+        images: zod.array(BakchoduImageInputSchema).optional(),
       }),
     )
     .optional(),
+  images: zod.array(BakchoduImageInputSchema).optional(),
   token: zod.string().describe("GitHub or Railway token for authentication"),
 });
 
@@ -136,9 +143,11 @@ export const BakchoduChatStreamBody = zod.object({
       zod.object({
         role: zod.enum(["user", "assistant"]),
         content: zod.string(),
+        images: zod.array(BakchoduImageInputSchema).optional(),
       }),
     )
     .optional(),
+  images: zod.array(BakchoduImageInputSchema).optional(),
   token: zod.string().describe("GitHub or Railway token for authentication"),
 });
 
